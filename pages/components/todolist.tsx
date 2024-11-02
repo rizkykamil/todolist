@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Todo {
     id: number;
@@ -10,25 +10,45 @@ export default function TodoList() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [newTodo, setNewTodo] = useState('');
 
-    const addTodo = () => {
+    useEffect(() => {
+        const fetchTodos = async () => {
+            const response = await fetch('/api/todos');
+            const data = await response.json();
+            setTodos(data);
+        };
+
+        fetchTodos();
+    }, []);
+
+    const addTodo = async () => {
         if (newTodo.trim()) {
-            setTodos([
-                ...todos,
-                { id: Date.now(), text: newTodo, completed: false },
-            ]);
+            const response = await fetch('/api/todos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: newTodo }),
+            });
+            const todo = await response.json();
+            setTodos([...todos, todo]);
             setNewTodo('');
         }
     };
 
-    const toggleTodo = (id: number) => {
-        setTodos(
-            todos.map(todo =>
-                todo.id === id ? { ...todo, completed: !todo.completed } : todo
-            )
-        );
+    const toggleTodo = async (id: number, completed: boolean) => {
+        const response = await fetch('/api/todos', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, completed }),
+        });
+        const updatedTodos = await response.json();
+        setTodos(todos.map(todo => (todo.id === id ? updatedTodos : todo)));
     };
 
-    const deleteTodo = (id: number) => {
+    const deleteTodo = async (id: number) => {
+        await fetch('/api/todos', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }), // Kirim ID di body, bukan di URL
+        });
         setTodos(todos.filter(todo => todo.id !== id));
     };
 
@@ -47,7 +67,7 @@ export default function TodoList() {
                     Tambah
                 </button>
             </div>
-            <ul className="list-group container px-5">
+            <ul className="list-group">
                 {todos.map(todo => (
                     <li
                         key={todo.id}
@@ -60,17 +80,43 @@ export default function TodoList() {
                                 textDecoration: todo.completed
                                     ? 'line-through'
                                     : 'none',
+                                cursor: 'pointer',
                             }}
-                            onClick={() => toggleTodo(todo.id)}
+                            onClick={() => toggleTodo(todo.id, todo.completed)}
                         >
                             {todo.text}
                         </span>
-                        <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => deleteTodo(todo.id)}
-                        >
-                            hapus
-                        </button>
+                        <div className="d-flex">
+                            <div className="col-auto">
+                                <button
+                                    className="btn btn-danger btn-sm me-2"
+                                    onClick={() => deleteTodo(todo.id)}
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                            <div className="col-auto">
+                                {todo.completed ? (
+                                    <button
+                                        className="btn btn-warning btn-sm"
+                                        onClick={() =>
+                                            toggleTodo(todo.id, !todo.completed)
+                                        }
+                                    >
+                                        Incomplete
+                                    </button>
+                                ) : (
+                                    <button
+                                        className="btn btn-success btn-sm"
+                                        onClick={() =>
+                                            toggleTodo(todo.id, !todo.completed)
+                                        }
+                                    >
+                                        Complete
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </li>
                 ))}
             </ul>
