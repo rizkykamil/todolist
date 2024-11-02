@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-
+import Image from 'next/image';
 interface Todo {
     id: number;
     text: string;
@@ -54,7 +54,15 @@ export default function TodoList() {
 
     return (
         <div className="container my-4">
-            <h1 className="text-center">To-Do List</h1>
+            <div className="d-flex align-items-center justify-content-center mb-4">
+                <Image
+                    src="/todo-list.ico"
+                    alt="To-Do List"
+                    width={50}
+                    height={50}
+                />
+                <h1 className="ms-2">To-Do List</h1>
+            </div>
             <div className="input-group mb-3">
                 <input
                     type="text"
